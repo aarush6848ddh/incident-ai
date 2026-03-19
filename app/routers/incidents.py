@@ -1,6 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from enum import Enum
+from app.auth import verify_api_key
+
 
 router = APIRouter()
 
@@ -17,7 +19,7 @@ class IncidentCreate(BaseModel):
     severity: Severity
     description: str
 
-@router.post("/incidents")
+@router.post("/incidents", dependencies=[Depends(verify_api_key)])
 def create_incident(incident: IncidentCreate):
     new_incident = {
         "id": len(incidents_db) + 1,
@@ -29,6 +31,6 @@ def create_incident(incident: IncidentCreate):
     incidents_db.append(new_incident)
     return new_incident
 
-@router.get("/incidents")
+@router.get("/incidents", dependencies=[Depends(verify_api_key)])
 def get_incidents():
     return incidents_db
