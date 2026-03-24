@@ -21,6 +21,14 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+  
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    command: npm run dev
+    depends_on:
+      - api
 
 volumes:
   db_data:
