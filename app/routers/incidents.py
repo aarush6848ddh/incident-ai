@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from enum import Enum
 from app.auth import verify_api_key
-
+import app.database
+import app.models
+from sqlalchemy.orm import Session
 
 router = APIRouter()
 
-incidents_db = []
 
 class Severity(str, Enum):
     low = "low"
@@ -20,17 +21,17 @@ class IncidentCreate(BaseModel):
     description: str
 
 @router.post("/incidents", dependencies=[Depends(verify_api_key)])
-def create_incident(incident: IncidentCreate):
-    new_incident = {
-        "id": len(incidents_db) + 1,
-        "title": incident.title,
-        "severity": incident.severity,
-        "description": incident.description,
-        "status": "open"
-    }
-    incidents_db.append(new_incident)
+def create_incident(incident: IncidentCreate, db: Session = Depends(app.database.get_db)):
+    new_incident = app.models.Incident(
+        title=incident.title,
+        severity=incident.severity,
+        description=incident.description
+    )
+    db.add(new_incident)
+    db.commit()
+    db.refresh(new_incident)
     return new_incident
 
 @router.get("/incidents", dependencies=[Depends(verify_api_key)])
-def get_incidents():
-    return incidents_db
+def get_incidents(db: Session = Depends(app.database.get_db)):
+    return db.query(app.models.Incident).all()
